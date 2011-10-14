@@ -10,8 +10,12 @@
         android:layout_alignParentTop="true" android:layout_toLeftOf="@id/entry_image"
         style="@android:style/TextAppearance.Medium" android:textStyle="bold" android:singleLine="true"
         android:text="Feedme 1.0 is out!" android:ellipsize="end" />
+    <ImageView android:src="@drawable/feed" android:id="@+id/entry_feed_icon"
+        android:layout_below="@+id/entry_title" android:layout_alignParentLeft="true"
+        android:layout_width="16dip" android:layout_height="16dip" android:layout_marginTop="2dip"></ImageView>
     <TextView android:id="@+id/entry_source" android:layout_width="fill_parent"
-        android:layout_height="wrap_content" android:layout_alignLeft="@id/entry_title"
-        android:layout_alignRight="@id/entry_title" android:layout_below="@id/entry_title"
-        android:layout_alignParentBottom="true" android:singleLine="true" android:text="Android News" />
+        android:layout_height="wrap_content" android:layout_marginLeft="4dip"
+        android:layout_toRightOf="@id/entry_feed_icon" android:layout_alignRight="@id/entry_title"
+        android:layout_below="@id/entry_title" android:layout_alignParentBottom="true"
+        android:singleLine="true" android:text="Android News" />
 </RelativeLayout>

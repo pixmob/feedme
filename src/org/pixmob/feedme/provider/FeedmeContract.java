@@ -15,7 +15,10 @@
  */
 package org.pixmob.feedme.provider;
 
+import java.net.URI;
+
 import android.content.ContentResolver;
+import android.database.Cursor;
 import android.net.Uri;
 import android.provider.BaseColumns;
 
@@ -32,10 +35,11 @@ public class FeedmeContract {
     protected static interface EntriesColumns {
         String GRID = "grid";
         String SOURCE = "source";
-        String TIMESTAMP = "timestamp";
+        String PUBLISHED = "published";
         String TITLE = "title";
         String SUMMARY = "summary";
         String URL = "url";
+        String STARRED = "starred";
         String STATUS = "status";
         String IMAGE = "image";
     }
@@ -48,8 +52,9 @@ public class FeedmeContract {
         /**
          * The content:// style URI for this table.
          */
-        public static final Uri CONTENT_URI = new Uri.Builder().scheme(
-            ContentResolver.SCHEME_CONTENT).authority(AUTHORITY).appendPath("entries").build();
+        public static final Uri CONTENT_URI = new Uri.Builder()
+                .scheme(ContentResolver.SCHEME_CONTENT).authority(AUTHORITY).appendPath("entries")
+                .build();
         /**
          * The MIME type of a {@link #CONTENT_URI} subdirectory of a single
          * entry.
@@ -72,5 +77,30 @@ public class FeedmeContract {
          * Status for an entry which is about to be deleted.
          */
         public static final int STATUS_PENDING_DELETE = 3;
+        /**
+         * Status for an entry which is about to be starred.
+         */
+        public static final int STATUS_PENDING_STARRED = 4;
+        
+        /**
+         * Get a entry {@link URI} from a Google Reader identifier.
+         */
+        public static Uri getEntryUri(ContentResolver resolver, String grid) {
+            final Cursor c = resolver.query(CONTENT_URI, new String[] { _ID }, GRID + "=?",
+                new String[] { grid }, null);
+            final Uri uri;
+            try {
+                if (c.moveToNext()) {
+                    final int id = c.getInt(c.getColumnIndex(_ID));
+                    uri = Uri.withAppendedPath(CONTENT_URI, String.valueOf(id));
+                } else {
+                    uri = null;
+                }
+            } finally {
+                c.close();
+            }
+            
+            return uri;
+        }
     }
 }

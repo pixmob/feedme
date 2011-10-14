@@ -26,7 +26,14 @@ public final class Constants {
      * Preference key for setting the selected account.
      */
     public static final String SP_KEY_ACCOUNT = "account";
+    /**
+     * Internal preference key for storing the authentication token.
+     */
     public static final String SP_KEY_AUTH_TOKEN = "authToken";
+    /**
+     * Preference key for setting how many new entries should be downloaded.
+     */
+    public static final String SP_KEY_NUMBER_OF_ITEMS = "numberOfItems";
     /**
      * Preferences file name.
      */

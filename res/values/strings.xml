@@ -10,4 +10,5 @@
     <string name="new_account_selected">New account selected.</string>
     <string name="authentication_failed">Authentication failed.</string>
     <string name="no_entry_found">No entry found.</string>
+    <string name="downloading_entries">Downloading new entries...</string>
 </resources>

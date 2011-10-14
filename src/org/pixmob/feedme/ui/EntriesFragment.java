@@ -61,7 +61,7 @@ import android.widget.Toast;
 public class EntriesFragment extends ListFragment implements
         SelectAccountDialog.OnAccountSelectedListener, LoaderCallbacks<Cursor> {
     private static final String[] ENTRIES_COLUMNS = { Entries._ID, Entries.SOURCE,
-            Entries.TIMESTAMP, Entries.TITLE, Entries.SUMMARY, Entries.URL, Entries.IMAGE };
+            Entries.PUBLISHED, Entries.TITLE, Entries.SUMMARY, Entries.URL, Entries.IMAGE };
     private static final String ENTRIES_SELECTION = Entries.STATUS + "=?";
     private static final String[] ENTRIES_SELECTION_ARGS = { String.valueOf(Entries.STATUS_UNREAD) };
     private CursorAdapter cursorAdapter;
@@ -100,8 +100,9 @@ public class EntriesFragment extends ListFragment implements
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
-        menu.add(Menu.NONE, R.string.refresh, 0, R.string.refresh).setIcon(
-            R.drawable.ic_menu_refresh).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        menu.add(Menu.NONE, R.string.refresh, 0, R.string.refresh)
+                .setIcon(R.drawable.ic_menu_refresh)
+                .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         menu.add(Menu.NONE, R.string.settings, 0, R.string.settings).setIcon(
             R.drawable.ic_menu_preferences);
         menu.add(Menu.NONE, R.string.accounts, 0, R.string.accounts).setIcon(

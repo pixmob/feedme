@@ -17,10 +17,15 @@ package org.pixmob.feedme.net;
 
 import static org.pixmob.feedme.Constants.SHARED_PREFERENCES;
 import static org.pixmob.feedme.Constants.SP_KEY_AUTH_TOKEN;
+import static org.pixmob.feedme.Constants.SP_KEY_NUMBER_OF_ITEMS;
 import static org.pixmob.feedme.Constants.TAG;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -28,20 +33,31 @@ import org.apache.http.StatusLine;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
+import org.pixmob.feedme.feature.Features;
+import org.pixmob.feedme.feature.SharedPreferencesSaverFeature;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
 
+/**
+ * Execute network requests.
+ * @author Pixmob
+ */
 public class NetworkClient {
+    private static final String SP_KEY_CONTINUATION = "continuation";
     private static String userAgent;
     private static String clientId;
     private final Context context;
     private final DefaultHttpClient client;
     private final SharedPreferences prefs;
     private final SharedPreferences.Editor prefsEditor;
+    private final EntriesParser parser;
     
     public NetworkClient(final Context context) {
         this.context = context;
@@ -56,6 +72,8 @@ public class NetworkClient {
         client = SSLEnabledHttpClient.newInstance(userAgent);
         prefs = context.getSharedPreferences(SHARED_PREFERENCES, Context.MODE_PRIVATE);
         prefsEditor = prefs.edit();
+        
+        parser = new EntriesParser();
     }
     
     /**
@@ -85,7 +103,7 @@ public class NetworkClient {
         } catch (NameNotFoundException e) {
             applicationVersion = "0.0.0";
         }
-        return "feedme/" + applicationVersion;
+        return Uri.encode("feedme_" + applicationVersion);
     }
     
     private String getAuthToken() {
@@ -105,29 +123,71 @@ public class NetworkClient {
         req.setHeader("Authorization", "GoogleLogin auth=" + authToken);
     }
     
-    private String createServiceUri(String uri) {
-        return "http://www.google.com/reader" + (uri.startsWith("/") ? uri : ("/" + uri));
+    private String createServiceUri(String uri, Map<String, String> parameters) {
+        final StringBuilder buf = new StringBuilder("http://www.google.com/reader");
+        if (!uri.startsWith("/")) {
+            buf.append('/');
+        }
+        buf.append(uri).append("?c=").append(clientId);
+        
+        if (parameters != null) {
+            for (final Map.Entry<String, String> e : parameters.entrySet()) {
+                buf.append('&').append(e.getKey()).append("=").append(e.getValue());
+            }
+        }
+        return buf.toString();
     }
     
-    public void downloadUnreadEntries(List<Entry> entries) throws IOException {
-        final HttpGet req = new HttpGet(
-                createServiceUri("/atom/user/-/state/com.google/reading-list"));
+    public void downloadUnreadEntries(List<ContentValues> entries) throws IOException {
+        final Map<String, String> params = new HashMap<String, String>(4);
+        params.put("client", clientId);
+        params.put("n", prefs.getString(SP_KEY_NUMBER_OF_ITEMS, "50"));
+        params.put("ck", String.valueOf(System.currentTimeMillis()));
+        
+        final String continuation = prefs.getString(SP_KEY_CONTINUATION, null);
+        if (continuation != null) {
+            params.put("c", continuation);
+        }
+        
+        final HttpGet req = new HttpGet(createServiceUri(
+            "/atom/user/-/state/com.google/reading-list", params));
         prepareRequest(req);
         
+        Log.i(TAG, "Sending request for downloading entries: " + req.getURI().toASCIIString());
+        
+        final EntriesParser.Results parseResults = new EntriesParser.Results();
+        parseResults.entries = entries;
+        
         HttpResponse resp = null;
+        FileOutputStream output = null;
         int statusCode = 0;
         try {
             resp = client.execute(req);
             final StatusLine statusLine = resp.getStatusLine();
             statusCode = statusLine.getStatusCode();
             
+            Log.i(TAG, "Entries download status code: " + statusCode);
+            
+            if (statusCode != 200) {
+                throw new IOException("Entries download error");
+            }
+            
             final HttpEntity entity = resp.getEntity();
-            Log.i(TAG, "Got response: " + statusLine.getReasonPhrase() + "/" + statusCode);
-            Log.i(TAG, "Entity: " + entity);
+            final InputStream input = entity.getContent();
+            parser.parse(input, EntityUtils.getContentCharSet(entity), parseResults);
+            
+            prefsEditor.putString(SP_KEY_CONTINUATION, parseResults.continuation);
+            Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
         } catch (IOException e) {
             throw new NetworkClientException("Failed to get unread entries", req.getURI()
                     .toString(), statusCode, e);
         } finally {
+            if (output != null) {
+                try {
+                    output.close();
+                } catch (IOException ignore) {
+                }
+            }
             closeResources(req, resp);
         }
     }

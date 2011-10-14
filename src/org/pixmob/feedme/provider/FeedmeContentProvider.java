@@ -32,9 +32,9 @@ import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteDatabase.CursorFactory;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
-import android.database.sqlite.SQLiteDatabase.CursorFactory;
 import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
@@ -83,8 +83,33 @@ public class FeedmeContentProvider extends ContentProvider {
     
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
-        // TODO Auto-generated method stub
-        return 0;
+        final SQLiteDatabase db = dbHelper.getWritableDatabase();
+        final int count;
+        
+        switch (URI_MATCHER.match(uri)) {
+            case ENTRIES:
+                count = db.delete(ENTRIES_TABLE, selection, selectionArgs);
+                if (DEVELOPER_MODE) {
+                    Log.d(TAG, "All entries were deleted");
+                }
+                break;
+            case ENTRY_ID:
+                final String id = uri.getPathSegments().get(1);
+                String fullSelection = Entries._ID + "='" + id + "'";
+                if (!TextUtils.isEmpty(selection)) {
+                    fullSelection += " AND (" + selection + ")";
+                }
+                count = db.delete(ENTRIES_TABLE, fullSelection, selectionArgs);
+                if (DEVELOPER_MODE) {
+                    Log.d(TAG, "Entry deleted: " + uri);
+                }
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported Uri: " + uri);
+        }
+        
+        getContext().getContentResolver().notifyChange(uri, null, false);
+        return count;
     }
     
     @Override
@@ -99,7 +124,7 @@ public class FeedmeContentProvider extends ContentProvider {
         if (DEVELOPER_MODE) {
             Log.d(TAG, "New entry inserted: " + entryUri);
         }
-        getContext().getContentResolver().notifyChange(entryUri, null, false);
+        getContext().getContentResolver().notifyChange(uri, null, false);
         
         return entryUri;
     }
@@ -137,7 +162,7 @@ public class FeedmeContentProvider extends ContentProvider {
             case ENTRIES:
                 qb.setTables(ENTRIES_TABLE);
                 if (TextUtils.isEmpty(realSortOrder)) {
-                    realSortOrder = Entries.TIMESTAMP + " DESC";
+                    realSortOrder = Entries.PUBLISHED + " DESC";
                 }
                 break;
             case ENTRY_ID:
@@ -156,8 +181,32 @@ public class FeedmeContentProvider extends ContentProvider {
     
     @Override
     public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
-        // TODO Auto-generated method stub
-        return 0;
+        final SQLiteDatabase db = dbHelper.getWritableDatabase();
+        final int count;
+        switch (URI_MATCHER.match(uri)) {
+            case ENTRIES:
+                count = db.update(ENTRIES_TABLE, values, selection, selectionArgs);
+                if (DEVELOPER_MODE) {
+                    Log.d(TAG, "All entries were updated");
+                }
+                break;
+            case ENTRY_ID:
+                final String id = uri.getPathSegments().get(1);
+                String fullSelection = Entries._ID + "='" + id + "'";
+                if (!TextUtils.isEmpty(selection)) {
+                    fullSelection += " AND (" + selection + ")";
+                }
+                count = db.update(ENTRIES_TABLE, values, fullSelection, selectionArgs);
+                if (DEVELOPER_MODE) {
+                    Log.d(TAG, "Entry updated: " + uri);
+                }
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported Uri: " + uri);
+        }
+        
+        getContext().getContentResolver().notifyChange(uri, null, false);
+        return count;
     }
     
     /**
@@ -167,9 +216,10 @@ public class FeedmeContentProvider extends ContentProvider {
     private static class DatabaseHelper extends SQLiteOpenHelper {
         private static final String CREATE_ENTRIES_TABLE = "CREATE TABLE " + ENTRIES_TABLE + " ("
                 + Entries._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " + Entries.GRID + " TEXT, "
-                + Entries.SOURCE + " TEXT, " + Entries.TIMESTAMP + " LONG, " + Entries.TITLE
-                + " TEXT, " + Entries.SUMMARY + " TEXT, " + Entries.URL + " TEXT, "
-                + Entries.STATUS + " INTEGER, " + Entries.IMAGE + " TEXT);";
+                + Entries.SOURCE + " TEXT, " + Entries.PUBLISHED + " LONG, " + Entries.STARRED
+                + " INTEGER, " + Entries.TITLE + " TEXT, " + Entries.SUMMARY + " TEXT, "
+                + Entries.URL + " TEXT, " + Entries.STATUS + " INTEGER, " + Entries.IMAGE
+                + " TEXT);";
         
         public DatabaseHelper(final Context context, final String name,
                 final CursorFactory cursorFactory, final int version) {
@@ -189,7 +239,7 @@ public class FeedmeContentProvider extends ContentProvider {
                 
                 cv.put(Entries.GRID, "feed/http://www.androidnews.com/feed/");
                 cv.put(Entries.SOURCE, "Android News");
-                cv.put(Entries.TIMESTAMP, System.currentTimeMillis());
+                cv.put(Entries.PUBLISHED, System.currentTimeMillis());
                 cv.put(Entries.TITLE, "Feedme 1.0 is out!");
                 cv.put(Entries.SUMMARY, "Feedme 1.0 is out! Get this version while it's hot!");
                 cv.put(Entries.URL, "http://github.com/pixmob/feedme");
