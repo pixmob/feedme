@@ -53,15 +53,12 @@ public class NetworkClient {
     private static final String SP_KEY_CONTINUATION = "continuation";
     private static String userAgent;
     private static String clientId;
-    private final Context context;
     private final DefaultHttpClient client;
     private final SharedPreferences prefs;
     private final SharedPreferences.Editor prefsEditor;
     private final EntriesParser parser;
     
     public NetworkClient(final Context context) {
-        this.context = context;
-        
         if (userAgent == null) {
             userAgent = generateUserAgent(context);
         }

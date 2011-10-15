@@ -33,6 +33,7 @@ import android.widget.TextView;
 class EntryCursorAdapter extends CursorAdapter {
     public static final int ID_TAG = R.id.entry_title;
     public static final int IMAGE_TAG = R.id.entry_image;
+    public static final int URL_TAG = R.id.entry_feed_icon;
     
     public EntryCursorAdapter(final Context context) {
         super(context, null, 0);
@@ -43,6 +44,7 @@ class EntryCursorAdapter extends CursorAdapter {
         final int entryId = cursor.getInt(cursor.getColumnIndex(Entries._ID));
         final String entryTitle = cursor.getString(cursor.getColumnIndex(Entries.TITLE));
         final String entrySource = cursor.getString(cursor.getColumnIndex(Entries.SOURCE));
+        final String entryUrl = cursor.getString(cursor.getColumnIndexOrThrow(Entries.URL));
         final String imagePath = cursor.getString(cursor.getColumnIndex(Entries.IMAGE));
         
         TextView tv = (TextView) view.findViewById(R.id.entry_title);
@@ -52,6 +54,7 @@ class EntryCursorAdapter extends CursorAdapter {
         tv.setText(entrySource);
         
         view.setTag(ID_TAG, entryId);
+        view.setTag(URL_TAG, entryUrl);
         view.setTag(IMAGE_TAG, imagePath);
     }
     

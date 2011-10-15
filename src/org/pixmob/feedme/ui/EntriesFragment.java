@@ -23,6 +23,7 @@ import static org.pixmob.feedme.Constants.SP_KEY_AUTH_TOKEN;
 import static org.pixmob.feedme.Constants.TAG;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 
 import org.pixmob.feedme.R;
 import org.pixmob.feedme.feature.Features;
@@ -41,6 +42,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
@@ -51,7 +53,9 @@ import android.support.v4.view.MenuItem;
 import android.support.v4.widget.CursorAdapter;
 import android.util.Log;
 import android.view.MenuInflater;
+import android.view.View;
 import android.widget.AbsListView;
+import android.widget.ListView;
 import android.widget.Toast;
 
 /**
@@ -68,6 +72,7 @@ public class EntriesFragment extends ListFragment implements
     private SharedPreferences prefs;
     private SharedPreferences.Editor prefsEditor;
     private Intent refreshEntriesIntent;
+    private WeakReference<OnEntrySelectionListener> listenerRef;
     
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -224,5 +229,37 @@ public class EntriesFragment extends ListFragment implements
             Toast.makeText(getActivity(), getString(R.string.new_account_selected),
                 Toast.LENGTH_SHORT).show();
         }
+    }
+    
+    @Override
+    public void onListItemClick(ListView l, View v, int position, long id) {
+        super.onListItemClick(l, v, position, id);
+        getListView().setItemChecked(position, true);
+        
+        final OnEntrySelectionListener listener = listenerRef != null ? listenerRef.get() : null;
+        if (listener != null) {
+            final Integer entryId = (Integer) v.getTag(EntryCursorAdapter.ID_TAG);
+            final Uri entryUri = Uri.withAppendedPath(Entries.CONTENT_URI, String.valueOf(entryId));
+            try {
+                listener.onEntrySelected(entryUri);
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to select entry: " + entryUri, e);
+            }
+        }
+    }
+    
+    public void setOnEntrySelectionListener(OnEntrySelectionListener listener) {
+        listenerRef = new WeakReference<OnEntrySelectionListener>(listener);
+    }
+    
+    /**
+     * Listener for entry selection.
+     * @author Pixmob
+     */
+    public static interface OnEntrySelectionListener {
+        /**
+         * This method is called when an entry is selected.
+         */
+        void onEntrySelected(Uri entryUri);
     }
 }
