@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent">
+    <TextView android:id="@+id/entry_details_title" android:text="Some title"
+        android:layout_width="fill_parent" android:layout_height="wrap_content"
+        android:layout_alignParentTop="true" android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true" android:textStyle="bold"
+        style="@android:style/TextAppearance.Medium" android:paddingTop="8dip"
+        android:paddingBottom="8dip"></TextView>
+    <WebView android:id="@+id/browser" android:layout_width="fill_parent"
+        android:layout_height="fill_parent" android:layout_below="@id/entry_details_title"
+        android:layout_alignParentLeft="true" android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"></WebView>
+</RelativeLayout>

@@ -23,12 +23,10 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
-import android.view.View;
-import android.webkit.WebView;
-import android.widget.TextView;
 
 /**
  * Main activity.
@@ -36,10 +34,6 @@ import android.widget.TextView;
  */
 public class Feedme extends FragmentActivity implements LoaderCallbacks<Cursor>,
         EntriesFragment.OnEntrySelectionListener {
-    private View entryDetails;
-    private TextView entryDetailsTitle;
-    private WebView browser;
-    
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,9 +45,11 @@ public class Feedme extends FragmentActivity implements LoaderCallbacks<Cursor>,
             entriesFragment.setOnEntrySelectionListener(this);
         }
         
-        entryDetails = findViewById(R.id.entry_details);
-        entryDetailsTitle = (TextView) findViewById(R.id.entry_details_title);
-        browser = (WebView) findViewById(R.id.browser);
+        final EntryDetailsFragment edf = (EntryDetailsFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.entry_details);
+        final FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        ft.hide(edf);
+        ft.commit();
     }
     
     @Override
@@ -72,18 +68,27 @@ public class Feedme extends FragmentActivity implements LoaderCallbacks<Cursor>,
     
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        final EntryDetailsFragment edf = (EntryDetailsFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.entry_details);
+        
         if (data == null || !data.moveToNext()) {
-            entryDetails.setVisibility(View.INVISIBLE);
+            if (edf != null) {
+                final FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+                ft.hide(edf);
+                ft.commitAllowingStateLoss();
+            }
         } else {
             final String entryUrl = data.getString(data.getColumnIndexOrThrow(Entries.URL));
-            if (browser == null) {
+            if (edf == null) {
                 final Intent i = new Intent(Intent.ACTION_VIEW).setData(Uri.parse(entryUrl));
                 startActivity(i);
             } else {
-                browser.loadUrl(entryUrl);
-                entryDetailsTitle
-                        .setText(data.getString(data.getColumnIndexOrThrow(Entries.TITLE)));
-                entryDetails.setVisibility(View.VISIBLE);
+                final String entryTitle = data.getString(data.getColumnIndexOrThrow(Entries.TITLE));
+                edf.setDetails(entryTitle, entryUrl);
+                
+                final FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+                ft.show(edf);
+                ft.commitAllowingStateLoss();
             }
         }
         
@@ -92,6 +97,5 @@ public class Feedme extends FragmentActivity implements LoaderCallbacks<Cursor>,
     
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-        entryDetails.setVisibility(View.INVISIBLE);
     }
 }

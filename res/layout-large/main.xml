@@ -3,17 +3,8 @@
     android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="match_parent">
     <fragment android:id="@+id/entries" android:name="org.pixmob.feedme.ui.EntriesFragment"
         android:layout_width="0dip" android:layout_height="fill_parent" android:layout_weight="0.4" />
-    <RelativeLayout android:id="@+id/entry_details" android:layout_width="0dip"
-        android:layout_height="fill_parent" android:layout_weight="0.6" android:visibility="invisible">
-        <TextView android:id="@+id/entry_details_title" android:text="Some title"
-            android:layout_width="fill_parent" android:layout_height="wrap_content"
-            android:layout_alignParentTop="true" android:layout_alignParentLeft="true"
-            android:layout_alignParentRight="true" android:textStyle="bold"
-            style="@android:style/TextAppearance.Medium" android:paddingTop="8dip"
-            android:paddingBottom="8dip"></TextView>
-        <WebView android:id="@+id/browser" android:layout_width="fill_parent"
-            android:layout_height="fill_parent" android:layout_below="@id/entry_details_title"
-            android:layout_alignParentLeft="true" android:layout_alignParentRight="true"
-            android:layout_alignParentBottom="true"></WebView>
-    </RelativeLayout>
+    <fragment android:id="@+id/entry_details" android:name="org.pixmob.feedme.ui.EntryDetailsFragment"
+        android:layout_width="0dip" android:layout_height="fill_parent" android:layout_weight="0.6" >
+        <!-- Preview: layout=@layout/entry_details -->
+    </fragment>
 </LinearLayout>
