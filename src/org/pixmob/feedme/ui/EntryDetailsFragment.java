@@ -18,6 +18,7 @@ package org.pixmob.feedme.ui;
 import org.pixmob.feedme.R;
 import org.pixmob.feedme.provider.FeedmeContract.Entries;
 
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -25,7 +26,10 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.support.v4.view.Menu;
+import android.support.v4.view.MenuItem;
 import android.view.LayoutInflater;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
@@ -38,6 +42,7 @@ import android.widget.TextView;
 public class EntryDetailsFragment extends Fragment implements LoaderCallbacks<Cursor> {
     private TextView entryDetailsTitle;
     private WebView browser;
+    private boolean entryDisplayed;
     
     public static EntryDetailsFragment newInstance(Uri entryUri) {
         final EntryDetailsFragment f = new EntryDetailsFragment();
@@ -47,6 +52,35 @@ public class EntryDetailsFragment extends Fragment implements LoaderCallbacks<Cu
             f.setArguments(args);
         }
         return f;
+    }
+    
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
+    }
+    
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+        menu.add(Menu.NONE, R.string.show_in_browser, 1, R.string.show_in_browser);
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.string.show_in_browser:
+                onShowInBrowser();
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+    
+    private void onShowInBrowser() {
+        if (entryDisplayed) {
+            final Intent i = new Intent(Intent.ACTION_VIEW).setData(Uri.parse(browser.getUrl()));
+            startActivity(i);
+        }
     }
     
     @Override
@@ -84,6 +118,7 @@ public class EntryDetailsFragment extends Fragment implements LoaderCallbacks<Cu
             final String entryTitle = data.getString(data.getColumnIndexOrThrow(Entries.TITLE));
             browser.loadUrl(entryUrl);
             entryDetailsTitle.setText(entryTitle);
+            entryDisplayed = true;
             
             getLoaderManager().destroyLoader(0);
         }

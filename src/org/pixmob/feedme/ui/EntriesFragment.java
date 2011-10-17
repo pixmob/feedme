@@ -136,9 +136,9 @@ public class EntriesFragment extends ListFragment implements
         menu.add(Menu.NONE, R.string.refresh, 0, R.string.refresh)
                 .setIcon(R.drawable.ic_menu_refresh)
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-        menu.add(Menu.NONE, R.string.settings, 0, R.string.settings).setIcon(
+        menu.add(Menu.NONE, R.string.settings, 2, R.string.settings).setIcon(
             R.drawable.ic_menu_preferences);
-        menu.add(Menu.NONE, R.string.accounts, 0, R.string.accounts).setIcon(
+        menu.add(Menu.NONE, R.string.accounts, 2, R.string.accounts).setIcon(
             R.drawable.ic_menu_login);
     }
     
