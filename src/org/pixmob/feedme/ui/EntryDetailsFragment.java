@@ -16,9 +16,15 @@
 package org.pixmob.feedme.ui;
 
 import org.pixmob.feedme.R;
+import org.pixmob.feedme.provider.FeedmeContract.Entries;
 
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager.LoaderCallbacks;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,24 +35,61 @@ import android.widget.TextView;
  * Display entry details, with a web view.
  * @author Pixmob
  */
-public class EntryDetailsFragment extends Fragment {
+public class EntryDetailsFragment extends Fragment implements LoaderCallbacks<Cursor> {
     private TextView entryDetailsTitle;
     private WebView browser;
     
+    public static EntryDetailsFragment newInstance(Uri entryUri) {
+        final EntryDetailsFragment f = new EntryDetailsFragment();
+        if (entryUri != null) {
+            final Bundle args = new Bundle(1);
+            args.putString("entryUri", entryUri.toString());
+            f.setArguments(args);
+        }
+        return f;
+    }
+    
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.entry_details, container, false);
+        final View v = inflater.inflate(R.layout.entry_details, container, false);
+        browser = (WebView) v.findViewById(R.id.browser);
+        entryDetailsTitle = (TextView) v.findViewById(R.id.entry_details_title);
+        return v;
     }
     
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        browser = (WebView) getView().findViewById(R.id.browser);
-        entryDetailsTitle = (TextView) getView().findViewById(R.id.entry_details_title);
+        
+        final Bundle args = getArguments();
+        if (args != null) {
+            final String entryUri = args.getString("entryUri");
+            if (entryUri != null) {
+                getLoaderManager().initLoader(0, getArguments(), this);
+            }
+        }
     }
     
-    public void setDetails(String entryTitle, String entryUrl) {
-        entryDetailsTitle.setText(entryTitle);
-        browser.loadUrl(entryUrl);
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        final Uri entryUri = Uri.parse(args.getString("entryUri"));
+        return new CursorLoader(getActivity(), entryUri,
+                new String[] { Entries.TITLE, Entries.URL }, null, null, null);
+    }
+    
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        if (data.moveToNext()) {
+            final String entryUrl = data.getString(data.getColumnIndex(Entries.URL));
+            final String entryTitle = data.getString(data.getColumnIndexOrThrow(Entries.TITLE));
+            browser.loadUrl(entryUrl);
+            entryDetailsTitle.setText(entryTitle);
+            
+            getLoaderManager().destroyLoader(0);
+        }
+    }
+    
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
     }
 }

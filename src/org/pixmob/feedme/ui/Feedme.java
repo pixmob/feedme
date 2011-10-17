@@ -24,16 +24,16 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v4.app.LoaderManager.LoaderCallbacks;
-import android.support.v4.content.CursorLoader;
-import android.support.v4.content.Loader;
+import android.view.View;
 
 /**
  * Main activity.
  * @author Pixmob
  */
-public class Feedme extends FragmentActivity implements LoaderCallbacks<Cursor>,
-        EntriesFragment.OnEntrySelectionListener {
+public class Feedme extends FragmentActivity implements EntriesFragment.OnEntrySelectionListener {
+    private Uri selectedEntryUri;
+    private boolean dualPane;
+    
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,57 +45,36 @@ public class Feedme extends FragmentActivity implements LoaderCallbacks<Cursor>,
             entriesFragment.setOnEntrySelectionListener(this);
         }
         
-        final EntryDetailsFragment edf = (EntryDetailsFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.entry_details);
-        final FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        ft.hide(edf);
-        ft.commit();
+        final View entryDetailsView = findViewById(R.id.entry_details);
+        dualPane = entryDetailsView != null && entryDetailsView.getVisibility() == View.VISIBLE;
     }
     
     @Override
     public void onEntrySelected(Uri entryUri) {
-        final Bundle args = new Bundle(1);
-        args.putString("entryUri", entryUri.toString());
-        getSupportLoaderManager().initLoader(0, args, this);
-    }
-    
-    @Override
-    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        final Uri entryUri = Uri.parse(args.getString("entryUri"));
-        return new CursorLoader(this, entryUri, new String[] { Entries.TITLE, Entries.SOURCE,
-                Entries.PUBLISHED, Entries.URL }, null, null, null);
-    }
-    
-    @Override
-    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        final EntryDetailsFragment edf = (EntryDetailsFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.entry_details);
-        
-        if (data == null || !data.moveToNext()) {
-            if (edf != null) {
-                final FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-                ft.hide(edf);
-                ft.commitAllowingStateLoss();
+        if (!dualPane) {
+            // There is not enough space to display the entry details fragment:
+            // start a new activity to show the entry URL.
+            final Cursor c = getContentResolver().query(entryUri, new String[] { Entries.URL },
+                null, null, null);
+            try {
+                if (c.moveToNext()) {
+                    final String entryUrl = c.getString(c.getColumnIndexOrThrow(Entries.URL));
+                    final Intent i = new Intent(Intent.ACTION_VIEW).setData(Uri.parse(entryUrl));
+                    startActivity(i);
+                }
+            } finally {
+                c.close();
             }
-        } else {
-            final String entryUrl = data.getString(data.getColumnIndexOrThrow(Entries.URL));
-            if (edf == null) {
-                final Intent i = new Intent(Intent.ACTION_VIEW).setData(Uri.parse(entryUrl));
-                startActivity(i);
-            } else {
-                final String entryTitle = data.getString(data.getColumnIndexOrThrow(Entries.TITLE));
-                edf.setDetails(entryTitle, entryUrl);
-                
-                final FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-                ft.show(edf);
-                ft.commitAllowingStateLoss();
-            }
+        } else if (!entryUri.equals(selectedEntryUri)) {
+            // Update the entry details fragment.
+            final EntryDetailsFragment entryDetailsFragment = EntryDetailsFragment
+                    .newInstance(entryUri);
+            final FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+            ft.replace(R.id.entry_details, entryDetailsFragment);
+            ft.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
+            ft.commit();
         }
         
-        getSupportLoaderManager().destroyLoader(0);
-    }
-    
-    @Override
-    public void onLoaderReset(Loader<Cursor> loader) {
+        selectedEntryUri = entryUri;
     }
 }

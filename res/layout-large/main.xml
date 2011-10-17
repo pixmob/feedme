@@ -3,8 +3,6 @@
     android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="match_parent">
     <fragment android:id="@+id/entries" android:name="org.pixmob.feedme.ui.EntriesFragment"
         android:layout_width="0dip" android:layout_height="fill_parent" android:layout_weight="0.4" />
-    <fragment android:id="@+id/entry_details" android:name="org.pixmob.feedme.ui.EntryDetailsFragment"
-        android:layout_width="0dip" android:layout_height="fill_parent" android:layout_weight="0.6" >
-        <!-- Preview: layout=@layout/entry_details -->
-    </fragment>
+    <FrameLayout android:id="@+id/entry_details" android:layout_weight="0.6"
+        android:layout_width="0dip" android:layout_height="fill_parent" android:background="?android:attr/detailsElementBackground" />
 </LinearLayout>

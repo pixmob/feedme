@@ -5,8 +5,7 @@
         android:layout_width="fill_parent" android:layout_height="wrap_content"
         android:layout_alignParentTop="true" android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true" android:textStyle="bold"
-        style="@android:style/TextAppearance.Medium" android:paddingTop="8dip"
-        android:paddingBottom="8dip"></TextView>
+        style="@android:style/TextAppearance.Medium" android:padding="8dip"></TextView>
     <WebView android:id="@+id/browser" android:layout_width="fill_parent"
         android:layout_height="fill_parent" android:layout_below="@id/entry_details_title"
         android:layout_alignParentLeft="true" android:layout_alignParentRight="true"

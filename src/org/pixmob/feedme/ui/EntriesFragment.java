@@ -73,6 +73,7 @@ public class EntriesFragment extends ListFragment implements
     private SharedPreferences.Editor prefsEditor;
     private Intent refreshEntriesIntent;
     private WeakReference<OnEntrySelectionListener> listenerRef;
+    private Uri selectedEntryUri;
     
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -100,6 +101,33 @@ public class EntriesFragment extends ListFragment implements
         
         // Start entries loading.
         getLoaderManager().initLoader(0, null, this);
+        
+        if (savedInstanceState != null) {
+            final String selectedEntryUriStr = savedInstanceState.getString("selectedEntryUri");
+            selectedEntryUri = selectedEntryUriStr == null ? null : Uri.parse(selectedEntryUriStr);
+            
+            final EntryDetailsFragment edf = (EntryDetailsFragment) getSupportFragmentManager()
+                    .findFragmentById(R.id.entry_details);
+            if (edf != null) {
+                final OnEntrySelectionListener listener = listenerRef != null ? listenerRef.get()
+                        : null;
+                if (listener != null) {
+                    try {
+                        listener.onEntrySelected(selectedEntryUri);
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to select entry: " + selectedEntryUri, e);
+                    }
+                }
+            }
+        }
+    }
+    
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (selectedEntryUri != null) {
+            outState.putString("selectedEntryUri", selectedEntryUri.toString());
+        }
     }
     
     @Override
@@ -118,7 +146,7 @@ public class EntriesFragment extends ListFragment implements
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         final CursorLoader loader = new CursorLoader(getActivity(), Entries.CONTENT_URI,
                 ENTRIES_COLUMNS, ENTRIES_SELECTION, ENTRIES_SELECTION_ARGS, null);
-        loader.setUpdateThrottle(1000);
+        loader.setUpdateThrottle(250);
         return loader;
     }
     
@@ -236,10 +264,12 @@ public class EntriesFragment extends ListFragment implements
         super.onListItemClick(l, v, position, id);
         getListView().setItemChecked(position, true);
         
+        final Integer entryId = (Integer) v.getTag(EntryCursorAdapter.ID_TAG);
+        final Uri entryUri = Uri.withAppendedPath(Entries.CONTENT_URI, String.valueOf(entryId));
+        selectedEntryUri = entryUri;
+        
         final OnEntrySelectionListener listener = listenerRef != null ? listenerRef.get() : null;
         if (listener != null) {
-            final Integer entryId = (Integer) v.getTag(EntryCursorAdapter.ID_TAG);
-            final Uri entryUri = Uri.withAppendedPath(Entries.CONTENT_URI, String.valueOf(entryId));
             try {
                 listener.onEntrySelected(entryUri);
             } catch (Exception e) {
