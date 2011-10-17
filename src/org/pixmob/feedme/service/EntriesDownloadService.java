@@ -97,6 +97,7 @@ public class EntriesDownloadService extends ActionService {
         final ContentResolver cr = getContentResolver();
         final ArrayList<ContentProviderOperation> ops = new ArrayList<ContentProviderOperation>(
                 entries.size());
+        int nbUnread = 0;
         for (final ContentValues entry : entries) {
             // Set the entry status to UNREAD by default.
             if (!entry.containsKey(Entries.STATUS)) {
@@ -114,12 +115,30 @@ public class EntriesDownloadService extends ActionService {
                 // This entry is already known: update it.
                 op = ContentProviderOperation.newUpdate(entryUri).withValues(entry).build();
             }
+            
+            if (Entries.STATUS_UNREAD == entry.getAsInteger(Entries.STATUS)) {
+                nbUnread++;
+            }
+            
             ops.add(op);
         }
         
         if (DEVELOPER_MODE) {
             Log.d(TAG, "Insert " + ops.size() + " new entrie(s) into database");
         }
+        
+        // If there is no more unread entries, the user has read everything.
+        // The database can be updated to mark as read every entries.
+        if (nbUnread == 0) {
+            final ContentValues cv = new ContentValues();
+            cv.put(Entries.STATUS, Entries.STATUS_READ);
+            ops.add(ContentProviderOperation
+                    .newUpdate(Entries.CONTENT_URI)
+                    .withValues(cv)
+                    .withSelection(Entries.STATUS + "=?",
+                        new String[] { String.valueOf(Entries.STATUS_UNREAD) }).build());
+        }
+        
         try {
             getContentResolver().applyBatch(FeedmeContract.AUTHORITY, ops);
         } catch (RemoteException e) {
