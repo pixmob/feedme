@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.pixmob.actionservice.ActionExecutionFailedException;
+import org.pixmob.actionservice.ActionService;
 import org.pixmob.feedme.R;
 import org.pixmob.feedme.net.NetworkClient;
 import org.pixmob.feedme.provider.FeedmeContract;
@@ -38,9 +40,6 @@ import android.content.OperationApplicationException;
 import android.net.Uri;
 import android.os.RemoteException;
 import android.util.Log;
-
-import com.pixmob.actionservice.ActionExecutionFailedException;
-import com.pixmob.actionservice.ActionService;
 
 /**
  * Download new entries from Google Reader. Entries are stored in the local
@@ -132,9 +131,7 @@ public class EntriesDownloadService extends ActionService {
         if (nbUnread == 0) {
             final ContentValues cv = new ContentValues();
             cv.put(Entries.STATUS, Entries.STATUS_READ);
-            ops.add(ContentProviderOperation
-                    .newUpdate(Entries.CONTENT_URI)
-                    .withValues(cv)
+            ops.add(ContentProviderOperation.newUpdate(Entries.CONTENT_URI).withValues(cv)
                     .withSelection(Entries.STATUS + "=?",
                         new String[] { String.valueOf(Entries.STATUS_UNREAD) }).build());
         }
